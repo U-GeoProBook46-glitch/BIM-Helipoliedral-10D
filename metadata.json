@@ -1,0 +1,7 @@
+{
+  "name": "BIM-Helipoliedral 10D",
+  "description": "A sovereign engineering platform for 10D BIM modeling using Ramanujan projections, Golden Ratio harmonics, and AI-driven DfD (Design for Disassembly) analysis.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
