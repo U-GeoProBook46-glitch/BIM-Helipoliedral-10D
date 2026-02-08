@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { Vector3 } from 'three';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,6 +22,8 @@ export const useBIMState = () => {
   const [currentDomain, setCurrentDomain] = useState<ISODomain | null>(null);
   const [currentManifestation, setCurrentManifestation] = useState<Manifestation>(Manifestation.Wireframe);
   const [currentRenderMode, setCurrentRenderMode] = useState<RenderMode>(RenderMode.Euclidian);
+  const [revolutionAngle, setRevolutionAngle] = useState<number>(360);
+  const [navTarget, setNavTarget] = useState<Vector3>(new Vector3(0, 0, 0));
 
   const activeRadius = useMemo(() => layer * 2.5, [layer]);
 
@@ -81,17 +84,23 @@ export const useBIMState = () => {
     setInstances(prev => [...prev, { blueprintId: id, position: pos, rotation: 0, layer, renderMode: currentRenderMode, manifestation: currentManifestation }]);
   }, [layer, currentRenderMode, currentManifestation]);
 
+  const handleNavTarget = useCallback((pos: Vector3) => {
+    setNavTarget(pos.clone());
+    setStatus(`NAV_FOCUS | X:${pos.x.toFixed(1)} Y:${pos.y.toFixed(1)} Z:${pos.z.toFixed(1)}`);
+  }, []);
+
   return {
-    appState: { mode, layer, points, stagedFaces, isClosed, precisionLines, stagedObjects, instances, selectedBlueprintId, activeRadius, showWorkflowModal, showDomainModal, currentDomain },
+    appState: { mode, layer, points, stagedFaces, isClosed, precisionLines, stagedObjects, instances, selectedBlueprintId, activeRadius, showWorkflowModal, showDomainModal, currentDomain, revolutionAngle, navTarget },
     uiState: { status, currentManifestation, currentRenderMode },
     handlers: { 
       setMode, setLayer, addPoint, continueDrawing, saveToISOStock, 
       undo: () => setPoints(p => p.slice(0, -1)), 
       clear: () => { setPoints([]); setStagedFaces([]); setIsClosed(false); setShowWorkflowModal(false); },
       setPrecisionLines, setSelectedBlueprintId, instantiate, setShowWorkflowModal, setShowDomainModal, setCurrentDomain,
-      addObject: (obj: StagedObject) => setStagedObjects(prev => [obj, ...prev])
+      addObject: (obj: StagedObject) => setStagedObjects(prev => [obj, ...prev]),
+      setRevolutionAngle,
+      setNavTarget: handleNavTarget
     },
-    // @google/genai fix: Align handler names with component prop expectations
     uiHandlers: { setManifestation: setCurrentManifestation, setRenderMode: setCurrentRenderMode }
   };
 };

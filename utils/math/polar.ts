@@ -1,4 +1,3 @@
-
 import { Vector3 } from 'three';
 
 export const PHI = 1.61803398875;
@@ -29,4 +28,13 @@ export const snapToPrecisionLines = (vec: Vector3, radius: number): Vector3 => {
   const { theta, phi } = toPolar(vec);
   const { snappedTheta, snappedPhi } = snapPolar(theta, phi);
   return toVec3(radius, snappedTheta, snappedPhi);
+};
+
+export const determineDomain = (points: Vector3[]): string => {
+  if (points.length < 3) return "CHIP";
+  const avgDist = points.reduce((acc, p, i) => {
+    if (i === 0) return acc;
+    return acc + p.distanceTo(points[i-1]);
+  }, 0) / (points.length - 1);
+  return avgDist > 50 ? "BIM" : "AUTO";
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { StagedObject, ISODomain } from '../../types';
 import { generateISOBoardSVG } from '../../utils/exporters/isoExporter';

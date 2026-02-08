@@ -1,4 +1,3 @@
-
 import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useDisposable } from '../../hooks/useDisposable';
@@ -26,6 +25,9 @@ export const GeometryStaging: React.FC<GeometryStagingProps> = ({
   // Garantir descarte imediato de recursos ao desmontar ou resetar rascunho
   useDisposable(lineRef);
   useDisposable(meshRef);
+
+  // Memoize the Line object to avoid JSX name collision with SVG <line> and handle geometry updates via attachment
+  const activeLine = useMemo(() => new THREE.Line(), []);
 
   // 1. Gerar os vértices a partir do estado de pontos snapped (Cartesianos)
   const vertices = useMemo(() => {
@@ -61,8 +63,8 @@ export const GeometryStaging: React.FC<GeometryStagingProps> = ({
   return (
     <group name="BIM_STAGING_LAYER">
       {/* Esqueleto do rascunho (Wireframe ativo) */}
-      {/* Fix: Explicitly cast ref to any to resolve conflict between Three.js and SVG line element types */}
-      <line ref={lineRef as any} geometry={lineGeometry}>
+      <primitive object={activeLine} ref={lineRef}>
+        <primitive object={lineGeometry} attach="geometry" />
         <lineBasicMaterial 
           color={color} 
           linewidth={2} 
@@ -70,12 +72,12 @@ export const GeometryStaging: React.FC<GeometryStagingProps> = ({
           opacity={0.8} 
           depthTest={false} 
         />
-      </line>
+      </primitive>
 
       {/* Pele temporária / Ghost Mesh (Visualização de Face) */}
       {isClosed && points.length >= 3 && (
         <mesh ref={meshRef}>
-          <bufferGeometry attach="geometry" {...lineGeometry} />
+          <primitive object={lineGeometry} attach="geometry" />
           <meshBasicMaterial 
             color={color} 
             transparent 

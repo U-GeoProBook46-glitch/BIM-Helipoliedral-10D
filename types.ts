@@ -62,4 +62,6 @@ export interface BIMState {
   currentDomain: ISODomain | null;
   currentManifestation: Manifestation;
   currentRenderMode: RenderMode;
+  revolutionAngle: number;
+  navTarget: Vector3;
 }

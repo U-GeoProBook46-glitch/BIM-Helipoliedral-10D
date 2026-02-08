@@ -1,4 +1,3 @@
-
 import { Vector3, Quaternion } from 'three';
 
 export const generateCurvePoints = (p1: Vector3, p2: Vector3, radius: number, segments: number = 20): Vector3[] => {
@@ -15,4 +14,8 @@ export const generateCurvePoints = (p1: Vector3, p2: Vector3, radius: number, se
     points.push(point);
   }
   return points;
+};
+
+export const generateLatheGeometry = (profile: Vector3[], divisions: number = 24) => {
+  return { profile, divisions };
 };

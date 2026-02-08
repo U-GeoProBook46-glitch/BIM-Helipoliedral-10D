@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { StagedObject } from '../../types';
 import { GoogleGenAI } from "@google/genai";
