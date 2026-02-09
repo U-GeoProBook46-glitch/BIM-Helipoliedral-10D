@@ -9,10 +9,6 @@ interface GeometryStagingProps {
   color?: string;
 }
 
-/**
- * COMPONENTE DE ALTA PERFORMANCE PARA RASCUNHO GEOMÉTRICO
- * Utiliza BufferGeometry dinâmica para evitar instâncias infinitas e garantir limpeza de GPU.
- */
 export const GeometryStaging: React.FC<GeometryStagingProps> = ({ 
   points, 
   isClosed, 
@@ -22,24 +18,17 @@ export const GeometryStaging: React.FC<GeometryStagingProps> = ({
   const lineRef = useRef<THREE.Line>(null);
   const meshRef = useRef<THREE.Mesh>(null);
 
-  // Garantir descarte imediato de recursos ao desmontar ou resetar rascunho
   useDisposable(lineRef);
   useDisposable(meshRef);
 
-  // Memoize the Line object to avoid JSX name collision with SVG <line> and handle geometry updates via attachment
   const activeLine = useMemo(() => new THREE.Line(), []);
 
-  // 1. Gerar os vértices a partir do estado de pontos snapped (Cartesianos)
   const vertices = useMemo(() => {
     if (points.length < 2) return new Float32Array(0);
-    
     const v3Points = [...points];
-    
-    // Se a face estiver fechada, conectamos ao primeiro ponto
     if (isClosed && points.length > 2) {
       v3Points.push(points[0].clone());
     }
-
     const positions = new Float32Array(v3Points.length * 3);
     v3Points.forEach((v, i) => {
       positions[i * 3] = v.x;
@@ -49,7 +38,6 @@ export const GeometryStaging: React.FC<GeometryStagingProps> = ({
     return positions;
   }, [points, isClosed]);
 
-  // 2. Criar Geometria de Linha (Estrutura de Precisão)
   const lineGeometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
     if (vertices.length > 0) {
@@ -62,7 +50,6 @@ export const GeometryStaging: React.FC<GeometryStagingProps> = ({
 
   return (
     <group name="BIM_STAGING_LAYER">
-      {/* Esqueleto do rascunho (Wireframe ativo) */}
       <primitive object={activeLine} ref={lineRef}>
         <primitive object={lineGeometry} attach="geometry" />
         <lineBasicMaterial 
@@ -73,8 +60,6 @@ export const GeometryStaging: React.FC<GeometryStagingProps> = ({
           depthTest={false} 
         />
       </primitive>
-
-      {/* Pele temporária / Ghost Mesh (Visualização de Face) */}
       {isClosed && points.length >= 3 && (
         <mesh ref={meshRef}>
           <primitive object={lineGeometry} attach="geometry" />
@@ -86,8 +71,6 @@ export const GeometryStaging: React.FC<GeometryStagingProps> = ({
           />
         </mesh>
       )}
-
-      {/* Indicadores de Vértice (Node Snap Markers) */}
       {points.map((p, i) => (
         <mesh key={`node-${i}`} position={p}>
           <sphereGeometry args={[0.3, 8, 8]} />

@@ -5,7 +5,7 @@ interface DomainSelectionModalProps {
   onSelect: (domain: ISODomain) => void;
 }
 
-const DomainSelectionModal: React.FC<DomainSelectionModalProps> = ({ onSelect }) => {
+export const DomainSelectionModal: React.FC<DomainSelectionModalProps> = ({ onSelect }) => {
   const options: { id: ISODomain; label: string; desc: string; icon: string }[] = [
     { id: 'BIM', label: 'BIM SCALE', desc: 'Metric Architecture (mm, cm, m)', icon: '🏗️' },
     { id: 'AUTO', label: 'AUTO PRECISION', desc: 'Mechanical Engineering (ISO-Metrical)', icon: '⚙️' },
@@ -43,5 +43,3 @@ const DomainSelectionModal: React.FC<DomainSelectionModalProps> = ({ onSelect })
     </div>
   );
 };
-
-export default DomainSelectionModal;

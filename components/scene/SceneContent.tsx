@@ -1,13 +1,13 @@
 import React from 'react';
-import { useThree } from '@react-three/fiber';
 import { OrbitControls, Grid, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { AppMode, RenderMode, Manifestation, StagedObject, AssemblyInstance, ISODomain } from '../../types';
 import { generateCurvePoints } from '../../utils/math/geometry';
-import { InstanceManager } from '../scene/InstanceManager';
-import { GeometryStaging } from '../scene/GeometryStaging';
-import { InternalPlanarGuides } from '../scene/InternalPlanarGuides';
-import { LatheSolidRenderer } from '../scene/LatheSolidRenderer';
+import { InstanceManager } from './InstanceManager';
+import { GeometryStaging } from './GeometryStaging';
+import { PrecisionLines } from './PrecisionLines';
+import { LatheSolidRenderer } from './LatheSolidRenderer';
+import { InteractionSurface } from './InteractionSurface';
 
 interface SceneContentProps {
   state: {
@@ -35,22 +35,7 @@ interface SceneContentProps {
   onDoubleClick?: () => void;
 }
 
-export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onClick, onNav, onDoubleClick }) => {
-  const { mouse, raycaster, camera } = useThree();
-
-  const handlePointerDown = (e: any) => {
-    e.stopPropagation();
-    const intersectionPoint = e.point;
-
-    // LÓGICA SOBERANA: 1-CLIQUE = FOCO, 2-CLIQUES = DESENHO
-    if (e.detail === 1) {
-      onNav(intersectionPoint);
-    } else if (e.detail === 2) {
-      const projectedPoint = intersectionPoint.clone().normalize().multiplyScalar(state.activeRadius);
-      onClick(projectedPoint);
-    }
-  };
-
+export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onClick, onNav }) => {
   return (
     <>
       <color attach="background" args={["#030200"]} />
@@ -58,22 +43,16 @@ export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onCl
       <directionalLight position={[10, 20, 10]} intensity={1.5} color="#ffb000" />
       <pointLight position={state.navTarget} intensity={0.5} color="#00ff41" distance={20} />
       
-      {/* Esfera de Interação - Atua como o 'Mecanismo de Arrastre' do Lathe */}
-      <mesh onPointerDown={handlePointerDown}>
-        <sphereGeometry args={[state.activeRadius, 64, 64]} />
-        <meshBasicMaterial 
-          color="#ffb000" 
-          wireframe 
-          transparent 
-          opacity={state.precisionLines ? 0.04 : 0.005} 
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      {/* Superfície de Interação Centralizada */}
+      <InteractionSurface 
+        radius={state.activeRadius} 
+        onPoint={onClick} 
+        onNav={onNav}
+        precisionLines={state.precisionLines}
+      />
 
-      <InternalPlanarGuides radius={state.activeRadius} visible={state.precisionLines} />
+      <PrecisionLines radius={state.activeRadius} visible={state.precisionLines} />
 
-      {/* Sólido de Revolução Anti-Espiral */}
       {state.points.length >= 2 && (
         <LatheSolidRenderer 
             points={state.points} 
@@ -82,7 +61,6 @@ export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onCl
         />
       )}
 
-      {/* Rascunho Geométrico e Faces Estagiadas */}
       <GeometryStaging 
         points={state.points} 
         isClosed={state.isClosed} 

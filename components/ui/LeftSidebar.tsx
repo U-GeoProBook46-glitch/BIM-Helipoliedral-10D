@@ -15,7 +15,7 @@ interface LeftSidebarProps {
   save: () => void;
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({
+export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   mode, setMode, precisionLines, setPrecisionLines, undo, clear,
   renderMode, setRenderMode, manifestation, setManifestation, save
 }) => {
@@ -79,5 +79,3 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
     </div>
   );
 };
-
-export default LeftSidebar;

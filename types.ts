@@ -1,4 +1,3 @@
-
 import { Vector3 } from 'three';
 
 export enum AppMode {
@@ -44,6 +43,7 @@ export interface AssemblyInstance {
   layer: number;
   renderMode: RenderMode;
   manifestation: Manifestation;
+  scale?: number;
 }
 
 export interface BIMState {

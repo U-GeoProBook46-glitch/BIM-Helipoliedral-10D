@@ -8,7 +8,7 @@ interface DigitalStockProps {
   selectedId: string | null;
 }
 
-const DigitalStock: React.FC<DigitalStockProps> = ({ stock, onSelect, selectedId }) => {
+export const DigitalStock: React.FC<DigitalStockProps> = ({ stock, onSelect, selectedId }) => {
   const [expanded, setExpanded] = useState<string[]>(['BIM', 'AUTO', 'CHIP']);
   const toggle = (folder: string) => setExpanded(prev => prev.includes(folder) ? prev.filter(f => f !== folder) : [...prev, folder]);
 
@@ -60,5 +60,3 @@ const DigitalStock: React.FC<DigitalStockProps> = ({ stock, onSelect, selectedId
 
   return <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-10">{renderFolder('BIM')}{renderFolder('AUTO')}{renderFolder('CHIP')}</div>;
 };
-
-export default DigitalStock;

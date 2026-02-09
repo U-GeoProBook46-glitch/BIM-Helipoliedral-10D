@@ -1,16 +1,16 @@
-
 import { useState, useCallback, useMemo } from 'react';
-import { Vector3 } from 'three';
+import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { AppMode, Manifestation, RenderMode, StagedObject, AssemblyInstance, ISODomain } from '../types';
-import { snapToPrecisionLines } from '../utils/math/polar';
+import { snapToPrecisionLines, toPolar } from '../utils/math/polar';
 import { analyzeDisassembly } from '../utils/math/analysis';
+import { isClosedLoop } from '../utils/math/topology';
 
 export const useBIMState = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.Lathe);
   const [layer, setLayer] = useState<number>(32.5);
-  const [points, setPoints] = useState<Vector3[]>([]);
-  const [stagedFaces, setStagedFaces] = useState<Vector3[][]>([]);
+  const [points, setPoints] = useState<THREE.Vector3[]>([]);
+  const [stagedFaces, setStagedFaces] = useState<THREE.Vector3[][]>([]);
   const [isClosed, setIsClosed] = useState(false);
   const [precisionLines, setPrecisionLines] = useState(true);
   const [stagedObjects, setStagedObjects] = useState<StagedObject[]>([]);
@@ -23,25 +23,34 @@ export const useBIMState = () => {
   const [currentManifestation, setCurrentManifestation] = useState<Manifestation>(Manifestation.Wireframe);
   const [currentRenderMode, setCurrentRenderMode] = useState<RenderMode>(RenderMode.Euclidian);
   const [revolutionAngle, setRevolutionAngle] = useState<number>(360);
-  const [navTarget, setNavTarget] = useState<Vector3>(new Vector3(0, 0, 0));
+  const [navTarget, setNavTarget] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
 
   const activeRadius = useMemo(() => layer * 2.5, [layer]);
 
-  const addPoint = useCallback((point: Vector3) => {
+  const addPoint = useCallback((point: THREE.Vector3) => {
     if (!currentDomain) {
       setShowDomainModal(true);
       return;
     }
     if (isClosed) return;
+
     const snapped = precisionLines ? snapToPrecisionLines(point, activeRadius) : point;
+    const polar = toPolar(snapped);
     
-    if (points.length > 2 && snapped.distanceTo(points[0]) < 2) {
+    const newPoints = [...points, snapped];
+    
+    // Log Multimodal: Polar (r, θ, φ) + Cartesiano (x, y, z)
+    const logMsg = `POINT: [X:${snapped.x.toFixed(2)}, Y:${snapped.y.toFixed(2)}, Z:${snapped.z.toFixed(2)}] | POLAR: [θ:${(polar.theta * 180 / Math.PI).toFixed(1)}°, φ:${(polar.phi * 180 / Math.PI).toFixed(1)}°]`;
+    console.log(logMsg);
+
+    if (isClosedLoop(newPoints, 2.0)) {
       setIsClosed(true);
       setShowWorkflowModal(true);
-      setStatus("TOPOLOGY CRYSTALLIZED | FACE CLOSED");
-      return;
+      setStatus("FACE CRYSTALLIZED | TOPOLOGY STABILIZED");
+    } else {
+      setPoints(newPoints);
+      setStatus(`DRAWING | ${logMsg}`);
     }
-    setPoints(prev => [...prev, snapped]);
   }, [points, isClosed, precisionLines, activeRadius, currentDomain]);
 
   const continueDrawing = useCallback(() => {
@@ -80,11 +89,11 @@ export const useBIMState = () => {
     setStatus(`MATERIALIZED TO ${domain}/${subFolder}`);
   }, [stagedFaces, points, layer]);
 
-  const instantiate = useCallback((id: string, pos: Vector3) => {
+  const instantiate = useCallback((id: string, pos: THREE.Vector3) => {
     setInstances(prev => [...prev, { blueprintId: id, position: pos, rotation: 0, layer, renderMode: currentRenderMode, manifestation: currentManifestation }]);
   }, [layer, currentRenderMode, currentManifestation]);
 
-  const handleNavTarget = useCallback((pos: Vector3) => {
+  const handleNavTarget = useCallback((pos: THREE.Vector3) => {
     setNavTarget(pos.clone());
     setStatus(`NAV_FOCUS | X:${pos.x.toFixed(1)} Y:${pos.y.toFixed(1)} Z:${pos.z.toFixed(1)}`);
   }, []);

@@ -1,7 +1,7 @@
 import { Vector3 } from 'three';
 
 export const calculateVolume = (points: Vector3[], radius: number): number => {
-  const area = points.length > 2 ? 0.5 : 0; // Simplified
+  const area = points.length > 2 ? 0.5 : 0; 
   return area * radius * 0.1;
 };
 

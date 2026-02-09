@@ -7,7 +7,7 @@ interface FaceWorkflowModalProps {
   onCancel: () => void;
 }
 
-const FaceWorkflowModal: React.FC<FaceWorkflowModalProps> = ({ onContinue, onSave, onCancel }) => {
+export const FaceWorkflowModal: React.FC<FaceWorkflowModalProps> = ({ onContinue, onSave, onCancel }) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md">
       <div className="w-96 bg-[#0a0800] border-2 border-[#ffb000] p-6 shadow-[0_0_60px_rgba(255,176,0,0.3)]">
@@ -46,5 +46,3 @@ const FaceWorkflowModal: React.FC<FaceWorkflowModalProps> = ({ onContinue, onSav
     </div>
   );
 };
-
-export default FaceWorkflowModal;

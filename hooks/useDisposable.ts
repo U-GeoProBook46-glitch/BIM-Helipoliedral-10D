@@ -4,7 +4,6 @@ import * as THREE from 'three';
 /**
  * useDisposable Hook
  * Kernel BIM-Helipoliedral 10D: Gestão Soberana de Memória GPU.
- * Garante a liberação imediata de recursos da placa de vídeo ao destruir componentes.
  */
 export const useDisposable = (ref: RefObject<THREE.Object3D | any>) => {
     useEffect(() => {

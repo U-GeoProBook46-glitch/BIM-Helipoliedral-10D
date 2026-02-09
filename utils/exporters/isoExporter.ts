@@ -1,10 +1,6 @@
 import * as THREE from 'three';
 import { StagedObject } from '../../types';
 
-/**
- * @service UnitFormatter
- * Conformidade com ISO/IEC 80000 para formatação SI
- */
 export class UnitFormatter {
   static formatMeasure(value: number, unit: 'm' | 'mm' | 'm2' | 'm3'): string {
     const precision = 3; 
@@ -19,14 +15,9 @@ export class UnitFormatter {
   }
 }
 
-/**
- * @service ProjectionEngine
- * Converte hiperesfera Ramanujan para plano técnico SVG
- */
 export class ProjectionEngine {
   static projectToSvg(points: [number, number, number][], sectorId: number): string {
     return points.map(p => {
-      // Projeção Mercator-like para planificação de face
       const x = p[0] + (sectorId * 50); 
       const y = p[1];
       return `${x.toFixed(2)},${y.toFixed(2)}`;

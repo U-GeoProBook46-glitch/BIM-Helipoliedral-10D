@@ -1,13 +1,12 @@
-
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import HUD from './components/ui/HUD';
-import LeftSidebar from './components/ui/LeftSidebar';
-import RightSidebar from './components/ui/RightSidebar';
-import FaceWorkflowModal from './components/ui/FaceWorkflowModal';
-import DomainSelectionModal from './components/ui/DomainSelectionModal';
-import { SceneContent } from './components/3d/Scene';
 import { useBIMState } from './hooks/useBIMState';
+import { HUD } from './components/ui/HUD';
+import { LeftSidebar } from './components/ui/LeftSidebar';
+import { RightSidebar } from './components/ui/RightSidebar';
+import { FaceWorkflowModal } from './components/ui/FaceWorkflowModal';
+import { DomainSelectionModal } from './components/ui/DomainSelectionModal';
+import { SceneContent } from './components/scene/SceneContent';
 import { AppMode } from './types';
 
 export default function App() {
@@ -75,8 +74,8 @@ export default function App() {
           </Suspense>
         </Canvas>
         
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-[480px] z-50 px-10 py-5 bg-black/95 border border-amber-900/40 backdrop-blur-xl shadow-2xl text-amber-500 rounded-sm">
-            <div className="flex justify-between text-[8px] text-amber-900 mb-2 tracking-[0.5em] uppercase font-bold">
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-[480px] z-50 px-10 py-5 bg-black/95 border border-amber-900/40 backdrop-blur-xl shadow-2xl text-amber-500 rounded-sm select-none">
+            <div className="flex justify-between text-[8px] text-amber-900 mb-2 tracking-[0.5em] uppercase font-black">
                 <span>COORD_MIN L1.0</span>
                 <span>SYSTEM_ELEVATION</span>
                 <span>COORD_MAX L60.0</span>
@@ -88,7 +87,7 @@ export default function App() {
               className="w-full h-1 bg-amber-950/30 appearance-none cursor-crosshair accent-[#ffb000] mb-6" 
             />
 
-            <div className="flex justify-between text-[8px] text-amber-900 mb-2 tracking-[0.5em] uppercase font-bold">
+            <div className="flex justify-between text-[8px] text-amber-900 mb-2 tracking-[0.5em] uppercase font-black">
                 <span>0º START</span>
                 <span>REVOLUTION_ANGLE</span>
                 <span>360º FULL</span>
@@ -126,18 +125,6 @@ export default function App() {
           onCancel={() => { handlers.setShowWorkflowModal(false); handlers.clear(); }}
         />
       )}
-      
-      <div className="fixed inset-0 pointer-events-none border border-[#ffb000]/10 z-[60] flex flex-col justify-between p-4">
-         <div className="flex justify-between">
-            <div className="w-16 h-16 border-t border-l border-[#ffb000]/40"></div>
-            <div className="w-16 h-16 border-t border-r border-[#ffb000]/40"></div>
-         </div>
-         <div className="flex justify-between">
-            <div className="w-16 h-16 border-b border-l border-[#ffb000]/40"></div>
-            <div className="w-16 h-16 border-b border-r border-[#ffb000]/40"></div>
-         </div>
-      </div>
-      <div className="fixed inset-0 pointer-events-none opacity-[0.05] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] z-[100]"></div>
     </div>
   );
 }

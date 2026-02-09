@@ -4,35 +4,25 @@ import { useDisposable } from '../../hooks/useDisposable';
 
 interface LatheSolidProps {
   points: THREE.Vector3[];
-  angle: number; // 0 a 360
+  angle: number; 
   color?: string;
 }
 
-/**
- * LATHE_SOLID_RENDERER v13.3.1
- * Garante a integridade do sólido de revolução utilizando projeção radial fixa.
- */
 export const LatheSolidRenderer: React.FC<LatheSolidProps> = ({ points, angle, color = "#ffb000" }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   useDisposable(meshRef);
 
   const geometry = useMemo(() => {
     if (points.length < 2) return null;
-    
-    // ANTI-ESPIRAL: Fixamos o raio em relação ao eixo Y
     const points2d = points.map(p => {
         const radius = Math.sqrt(p.x * p.x + p.z * p.z);
         return new THREE.Vector2(radius, p.y);
     });
-
-    const segments = 64; // Maior fidelidade para curvaturas helipoliedrais
+    const segments = 64; 
     const phiLength = (angle * Math.PI) / 180;
-
     try {
-        const geo = new THREE.LatheGeometry(points2d, segments, 0, phiLength);
-        return geo;
+        return new THREE.LatheGeometry(points2d, segments, 0, phiLength);
     } catch (e) {
-        console.warn("Kernel Geo-Exception: Lathe points invalid", e);
         return null;
     }
   }, [points, angle]);
@@ -50,7 +40,6 @@ export const LatheSolidRenderer: React.FC<LatheSolidProps> = ({ points, angle, c
         roughness={0.1}
         emissive={color}
         emissiveIntensity={0.15}
-        envMapIntensity={1}
       />
     </mesh>
   );

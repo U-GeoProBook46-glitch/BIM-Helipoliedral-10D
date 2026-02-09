@@ -6,7 +6,7 @@ interface HUDProps {
   mode: string;
 }
 
-const HUD: React.FC<HUDProps> = ({ status, layer, mode }) => {
+export const HUD: React.FC<HUDProps> = ({ status, layer, mode }) => {
   return (
     <div className="fixed top-0 left-0 w-full z-50 pointer-events-none p-6 flex justify-between items-start select-none">
       <div className="bg-black/90 border border-amber-900/40 p-5 backdrop-blur-xl shadow-2xl rounded-sm">
@@ -36,5 +36,3 @@ const HUD: React.FC<HUDProps> = ({ status, layer, mode }) => {
     </div>
   );
 };
-
-export default HUD;
