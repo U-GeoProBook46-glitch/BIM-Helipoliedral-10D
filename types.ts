@@ -16,6 +16,18 @@ export enum Manifestation {
   Volume = 'Volume'
 }
 
+export type ConnectionType = 'MECHANICAL_BOLT' | 'GRAVITY_FIT' | 'CHEMICAL_GLUE' | 'WELDED';
+export type LifecyclePhase = 'ASSEMBLY' | 'OPERATION' | 'END_OF_LIFE';
+
+export interface DisassemblyData {
+  connectionType: ConnectionType;
+  accessibilityLevel: number; // 0.0 to 1.0
+  disassemblyTool: string;
+  recyclabilityIndex: number;
+  lifecyclePhase: LifecyclePhase;
+  steps: string[];
+}
+
 export type ISODomain = 'BIM' | 'AUTO' | 'CHIP';
 
 export interface CoordinatePolar {
@@ -34,9 +46,11 @@ export interface StagedObject {
   recoveryScore: number;
   timestamp: number;
   unit: string;
+  dfd?: DisassemblyData;
 }
 
 export interface AssemblyInstance {
+  id: string; // Unique for instance
   blueprintId: string;
   position: Vector3;
   rotation: number;
@@ -44,6 +58,7 @@ export interface AssemblyInstance {
   renderMode: RenderMode;
   manifestation: Manifestation;
   scale?: number;
+  dfd: DisassemblyData;
 }
 
 export interface BIMState {
@@ -55,7 +70,7 @@ export interface BIMState {
   precisionLines: boolean;
   stagedObjects: StagedObject[];
   instances: AssemblyInstance[];
-  selectedBlueprintId: string | null;
+  selectedInstanceId: string | null;
   status: string;
   showWorkflowModal: boolean;
   showDomainModal: boolean;

@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
-import { AppMode, Manifestation, RenderMode, StagedObject, AssemblyInstance, ISODomain } from '../types';
+import { AppMode, Manifestation, RenderMode, StagedObject, AssemblyInstance, ISODomain, DisassemblyData } from '../types';
 import { snapToPrecisionLines, toPolar } from '../utils/math/polar';
 import { analyzeDisassembly } from '../utils/math/analysis';
 import { isClosedLoop } from '../utils/math/topology';
@@ -15,8 +15,9 @@ export const useBIMState = () => {
   const [precisionLines, setPrecisionLines] = useState(true);
   const [stagedObjects, setStagedObjects] = useState<StagedObject[]>([]);
   const [instances, setInstances] = useState<AssemblyInstance[]>([]);
-  const [selectedBlueprintId, setSelectedBlueprintId] = useState<string | null>(null);
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [status, setStatus] = useState("IDLE | WAITING COMMAND");
+  const [logs, setLogs] = useState<string[]>([]);
   const [showWorkflowModal, setShowWorkflowModal] = useState(false);
   const [showDomainModal, setShowDomainModal] = useState(false);
   const [currentDomain, setCurrentDomain] = useState<ISODomain | null>(null);
@@ -27,6 +28,24 @@ export const useBIMState = () => {
 
   const activeRadius = useMemo(() => layer * 2.5, [layer]);
 
+  const addLog = useCallback((msg: string) => {
+    setLogs(prev => [msg, ...prev].slice(0, 50));
+  }, []);
+
+  const generateDefaultDfD = (name: string): DisassemblyData => ({
+    connectionType: 'MECHANICAL_BOLT',
+    accessibilityLevel: 1.0,
+    disassemblyTool: 'Chave Allen 5mm',
+    recyclabilityIndex: 0.98,
+    lifecyclePhase: 'OPERATION',
+    steps: [
+      `Posicione o atuador no centroide de ${name}`,
+      "Desbloqueie os fixadores mecânicos superiores",
+      "Retire o componente seguindo o vetor normal do plano",
+      "Encaminhe para logística reversa ISO 14001"
+    ]
+  });
+
   const addPoint = useCallback((point: THREE.Vector3) => {
     if (!currentDomain) {
       setShowDomainModal(true);
@@ -35,33 +54,19 @@ export const useBIMState = () => {
     if (isClosed) return;
 
     const snapped = precisionLines ? snapToPrecisionLines(point, activeRadius) : point;
-    const polar = toPolar(snapped);
-    
     const newPoints = [...points, snapped];
     
-    // Log Multimodal: Polar (r, θ, φ) + Cartesiano (x, y, z)
-    const logMsg = `POINT: [X:${snapped.x.toFixed(2)}, Y:${snapped.y.toFixed(2)}, Z:${snapped.z.toFixed(2)}] | POLAR: [θ:${(polar.theta * 180 / Math.PI).toFixed(1)}°, φ:${(polar.phi * 180 / Math.PI).toFixed(1)}°]`;
-    console.log(logMsg);
+    addLog(`PT_CRYSTAL: [X:${snapped.x.toFixed(2)} Y:${snapped.y.toFixed(2)} Z:${snapped.z.toFixed(2)}]`);
 
     if (isClosedLoop(newPoints, 2.0)) {
       setIsClosed(true);
       setShowWorkflowModal(true);
       setStatus("FACE CRYSTALLIZED | TOPOLOGY STABILIZED");
+      addLog("TOPOLOGY_LOOP_CLOSED: FACE DETECTED");
     } else {
       setPoints(newPoints);
-      setStatus(`DRAWING | ${logMsg}`);
     }
-  }, [points, isClosed, precisionLines, activeRadius, currentDomain]);
-
-  const continueDrawing = useCallback(() => {
-    if (points.length > 2) {
-      setStagedFaces(prev => [...prev, [...points]]);
-      setPoints([]);
-      setIsClosed(false);
-      setShowWorkflowModal(false);
-      setStatus("DRAWING CONTINUITY | CACHED FACE");
-    }
-  }, [points]);
+  }, [points, isClosed, precisionLines, activeRadius, currentDomain, addLog]);
 
   const saveToISOStock = useCallback((domain: ISODomain, subFolder: string) => {
     const allFaces = [...stagedFaces, points].filter(f => f.length > 2);
@@ -72,43 +77,65 @@ export const useBIMState = () => {
       id: `ISO-${uuidv4().slice(0, 8).toUpperCase()}`,
       name: `UNIT-${allFaces.length}F`,
       points: consolidatedPoints.map(p => [p.x, p.y, p.z]),
-      layer,
-      domain,
-      subFolder,
+      layer, domain, subFolder,
       description: `ISO ${domain} Active Topology`,
       recoveryScore: analyzeDisassembly(consolidatedPoints),
       timestamp: Date.now(),
-      unit: subFolder === 'm' ? 'm' : subFolder === 'Micrometer' ? 'μm' : 'mm'
+      unit: subFolder === 'm' ? 'm' : 'mm',
+      dfd: generateDefaultDfD(`UNIT-${allFaces.length}F`)
     };
 
     setStagedObjects(prev => [newObj, ...prev]);
-    setStagedFaces([]);
-    setPoints([]);
-    setIsClosed(false);
-    setShowWorkflowModal(false);
+    addLog(`MATERIALIZED: ${newObj.id} TO STOCK`);
+    setStagedFaces([]); setPoints([]); setIsClosed(false); setShowWorkflowModal(false);
     setStatus(`MATERIALIZED TO ${domain}/${subFolder}`);
-  }, [stagedFaces, points, layer]);
+  }, [stagedFaces, points, layer, addLog]);
 
-  const instantiate = useCallback((id: string, pos: THREE.Vector3) => {
-    setInstances(prev => [...prev, { blueprintId: id, position: pos, rotation: 0, layer, renderMode: currentRenderMode, manifestation: currentManifestation }]);
-  }, [layer, currentRenderMode, currentManifestation]);
-
-  const handleNavTarget = useCallback((pos: THREE.Vector3) => {
-    setNavTarget(pos.clone());
-    setStatus(`NAV_FOCUS | X:${pos.x.toFixed(1)} Y:${pos.y.toFixed(1)} Z:${pos.z.toFixed(1)}`);
-  }, []);
+  const deployToAssembly = useCallback((id: string) => {
+    const blueprint = stagedObjects.find(o => o.id === id);
+    if (blueprint) {
+      const instanceId = uuidv4().slice(0, 8);
+      setInstances(prev => [...prev, { 
+        id: instanceId,
+        blueprintId: id, 
+        position: navTarget.clone(), 
+        rotation: 0, 
+        layer, 
+        renderMode: currentRenderMode, 
+        manifestation: currentManifestation,
+        dfd: blueprint.dfd || generateDefaultDfD(blueprint.name)
+      }]);
+      addLog(`DEPLOYED_INSTANCE: ${instanceId} FROM ${id}`);
+      setStatus(`DEPLOYED: ${blueprint.name} TO ASSEMBLY`);
+      setSelectedInstanceId(instanceId);
+    }
+  }, [stagedObjects, navTarget, layer, currentRenderMode, currentManifestation, addLog]);
 
   return {
-    appState: { mode, layer, points, stagedFaces, isClosed, precisionLines, stagedObjects, instances, selectedBlueprintId, activeRadius, showWorkflowModal, showDomainModal, currentDomain, revolutionAngle, navTarget },
+    appState: { 
+      mode, layer, points, stagedFaces, isClosed, precisionLines, 
+      stagedObjects, instances, selectedInstanceId, activeRadius, 
+      showWorkflowModal, showDomainModal, currentDomain, revolutionAngle, navTarget, logs
+    },
     uiState: { status, currentManifestation, currentRenderMode },
     handlers: { 
-      setMode, setLayer, addPoint, continueDrawing, saveToISOStock, 
-      undo: () => setPoints(p => p.slice(0, -1)), 
-      clear: () => { setPoints([]); setStagedFaces([]); setIsClosed(false); setShowWorkflowModal(false); },
-      setPrecisionLines, setSelectedBlueprintId, instantiate, setShowWorkflowModal, setShowDomainModal, setCurrentDomain,
-      addObject: (obj: StagedObject) => setStagedObjects(prev => [obj, ...prev]),
+      setMode, setLayer, addPoint, saveToISOStock, 
+      undo: () => { setPoints(p => p.slice(0, -1)); addLog("ACTION_UNDO: POINT_REMOVED"); },
+      clear: () => { setPoints([]); setStagedFaces([]); setInstances([]); addLog("KERNEL_PURGE: WORKSPACE_CLEARED"); },
+      setPrecisionLines, 
+      setSelectedInstanceId, 
+      setShowWorkflowModal, setShowDomainModal, setCurrentDomain,
+      addObject: (obj: StagedObject) => { setStagedObjects(prev => [obj, ...prev]); addLog(`AI_SYNTH_SYNC: ${obj.id}`); },
       setRevolutionAngle,
-      setNavTarget: handleNavTarget
+      setNavTarget: (p: THREE.Vector3) => { setNavTarget(p.clone()); addLog(`NAV_FOCUS: [${p.x.toFixed(1)}, ${p.z.toFixed(1)}]`); },
+      deployToAssembly,
+      continueDrawing: () => {
+        if (points.length > 2) {
+          setStagedFaces(prev => [...prev, [...points]]);
+          addLog("FACE_CACHED: STARTING_NEW_TOPOLOGY");
+          setPoints([]); setIsClosed(false); setShowWorkflowModal(false);
+        }
+      }
     },
     uiHandlers: { setManifestation: setCurrentManifestation, setRenderMode: setCurrentRenderMode }
   };
