@@ -1,6 +1,6 @@
-
-import React, { Suspense, useState, useCallback } from 'react';
+import React, { Suspense, useState, useCallback, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
+import * as THREE from 'three';
 import { useBIMState } from './hooks/useBIMState';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { HUD } from './components/ui/HUD';
@@ -16,39 +16,56 @@ import { NeuroCoreService } from './services/NeuroCore';
 
 /**
  * BIM-Helipoliedral 10D: Application Sovereign Root
- * Compliance: ISO 9241 (Ergonomia) & WCAG 2.2 (Acessibilidade)
+ * ISO 9241-11 & ISO 9241-171 Compliance.
  */
 export default function App() {
   const { appState, uiState, handlers, uiHandlers } = useBIMState();
   
   /**
-   * handleGeminiResponse: Ponte de Vibe Coding entre AI e Kernel.
-   * Valida tokens de ação e transmuta em geometria soberana na camada ativa.
+   * handleGeminiResponse: Ponte de Reconciliação Neuro-Core.
+   * Transmuta intenções em Geometria Soberana com Handshake Atômico.
    */
   const handleGeminiResponse = useCallback((jsonFromAi: any) => {
-    // Sincronização de Raio Ativo LX conforme camada Ramanujan
     const currentRadius = appState.activeRadius;
-    
-    // Feedback de Log (ISO 9241-11)
-    handlers.addObject && handlers.addObject({} as any); // Trigger hack for log logic if needed, but better use addLog directly
-    // Note: useBIMState already has addLog in its internal state, we ensure we use it.
-    // However, the handlers object passed from useBIMState needs to be correctly mapped.
-    
     const synthesizedObject = NeuroCoreService.transmuteIntentToGeometry(jsonFromAi, currentRadius);
-    
     if (synthesizedObject) {
-      // Injeção de Geometria Soberana no Stock
+      // Injeção Atômica: objeto -> mode -> stabilizing -> active_id
       handlers.addObject(synthesizedObject);
     }
   }, [appState.activeRadius, handlers]);
 
-  // Assistente Gemini integrado ao motor de transmutação
   const assistant = useGeminiAssistant(handleGeminiResponse);
   
   const [isLeftOpen, setIsLeftOpen] = useState(true);
   const [isRightOpen, setIsRightOpen] = useState(true);
   
   useKeyboardShortcuts(handlers, appState);
+
+  /**
+   * Brain Listener: Monitora estabilização de geometria AI.
+   * Foca a navegação no centroide do novo objeto fantasma para reativar o contexto.
+   */
+  useEffect(() => {
+    const neuroGhost = appState.stagedObjects.find(o => o.ghostMode && o.origin === 'NEURO_CORE');
+    if (neuroGhost && neuroGhost.points.length > 0) {
+      const centroid = new THREE.Vector3(0, 0, 0);
+      neuroGhost.points.forEach(p => centroid.add(new THREE.Vector3(p[0], p[1], p[2])));
+      centroid.divideScalar(neuroGhost.points.length);
+      
+      // Sincroniza navegação para destravar o contexto visual
+      handlers.setNavTarget(centroid);
+    }
+  }, [appState.stagedObjects.length]); 
+
+  // Fallback Vocal de Cristalização
+  useEffect(() => {
+    const lastMsg = assistant.messages[assistant.messages.length - 1];
+    if (lastMsg?.role === 'user' && lastMsg.content.toLowerCase().includes('cristalizar agora')) {
+      if (appState.showWorkflowModal) {
+        handlers.saveToISOStock(appState.currentDomain || 'BIM', 'm');
+      }
+    }
+  }, [assistant.messages, appState.showWorkflowModal, handlers, appState.currentDomain]);
 
   const selectedInstance = appState.instances.find(i => i.id === appState.selectedInstanceId);
   const selectedBlueprint = appState.stagedObjects.find(o => o.id === selectedInstance?.blueprintId);

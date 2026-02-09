@@ -1,3 +1,4 @@
+
 import { Vector3 } from 'three';
 
 export enum AppMode {
@@ -35,6 +36,7 @@ export interface DisassemblyData {
 }
 
 export type ISODomain = 'BIM' | 'AUTO' | 'CHIP';
+export type ObjectOrigin = 'MANUAL' | 'NEURO_CORE';
 
 export interface StagedObject {
   id: string;
@@ -51,6 +53,7 @@ export interface StagedObject {
   revolutionAngle?: number;
   isLathe?: boolean;
   ghostMode?: boolean; // Flag for synthesized objects (vibe coding)
+  origin: ObjectOrigin; // Tracking source of data
   dfd?: DisassemblyData;
 }
 
