@@ -1,20 +1,14 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# BIM-Helipoliedral 10D - Gemini 3 Hackathon
 
-# Run and deploy your AI Studio app
+High-performance spatial engineering engine with 10D topological validation, orchestrated by Gemini 3.
 
-This contains everything you need to run your app locally.
+## 🚀 Live Demo
+https://ai.studio/apps/drive/1nIu_pYqz78FuHCNUwcB9NNIVhS_coIE7?fullscreenApplet=true
 
-View your app in AI Studio: https://ai.studio/apps/drive/1nIu_pYqz78FuHCNUwcB9NNIVhS_coIE7
+## 🛠️ Tech Stack
+- **Core:** Rust + WebAssembly (WASM)
+- **AI:** Gemini 3 Pro API (NeuroCore Orchestration)
+- **Frontend:** Svelte / TypeScript
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🔒 License
+All Rights Reserved. Private source code for contest evaluation.
