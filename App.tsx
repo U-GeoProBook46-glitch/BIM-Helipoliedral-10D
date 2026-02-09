@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useBIMState } from './hooks/useBIMState';
@@ -11,10 +12,12 @@ import { SceneContent } from './components/scene/SceneContent';
 import { DisassemblyModal } from './components/ui/DisassemblyModal';
 import { LogPanel } from './components/ui/LogPanel';
 import { AssistantControl } from './components/ui/AssistantControl';
-import { AppMode } from './types';
+import { GeminiPanel } from './components/ui/GeminiPanel';
+import { useGeminiAssistant } from './hooks/useGeminiAssistant';
 
 export default function App() {
   const { appState, uiState, handlers, uiHandlers } = useBIMState();
+  const assistant = useGeminiAssistant(handlers.addObject);
   
   useKeyboardShortcuts(handlers, appState);
 
@@ -48,9 +51,17 @@ export default function App() {
         
         <LogPanel logs={appState.logs} />
         
-        <AssistantControl onCrystallize={handlers.addObject} />
+        <GeminiPanel 
+          messages={assistant.messages}
+          isProcessing={assistant.isProcessing}
+          onApprove={assistant.approveProposal}
+          onClose={() => {}}
+          pendingProposal={assistant.pendingProposal}
+        />
+        
+        {/* Fixed: Passing unified assistant instance to AssistantControl to prevent state bifurcation */}
+        <AssistantControl assistant={assistant} />
 
-        {/* Modal de Desmontagem ISO 8887-1 */}
         {selectedInstance && selectedBlueprint && (
           <DisassemblyModal 
             instance={selectedInstance} 

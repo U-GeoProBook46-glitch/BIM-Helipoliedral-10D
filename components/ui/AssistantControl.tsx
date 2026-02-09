@@ -1,17 +1,23 @@
+
 import React, { useRef } from 'react';
 import { Mic, MicOff, Camera, Loader2 } from 'lucide-react';
-import { useGeminiAssistant } from '../../hooks/useGeminiAssistant';
-import { StagedObject } from '../../types';
 
 interface AssistantControlProps {
-  onCrystallize: (obj: StagedObject) => void;
+  assistant: any; // Shared instance from App.tsx
 }
 
-export const AssistantControl: React.FC<AssistantControlProps> = ({ onCrystallize }) => {
-  const { startVoiceCommand, isListening, isProcessing, lastTranscript, processWithAI } = useGeminiAssistant(onCrystallize);
+/**
+ * BIM-Helipoliedral 10D: Assistant Control Unit
+ * Provides multimodal entry points for voice and vision commands.
+ */
+export const AssistantControl: React.FC<AssistantControlProps> = ({ assistant }) => {
+  const { startVoiceCommand, isListening, isProcessing, lastTranscript, processWithAI } = assistant;
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  /**
+   * captureVision: Captures a video frame and sends it to Gemini for topology analysis.
+   */
   const captureVision = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -20,7 +26,7 @@ export const AssistantControl: React.FC<AssistantControlProps> = ({ onCrystalliz
         await new Promise((resolve) => videoRef.current!.onloadedmetadata = resolve);
         videoRef.current.play();
         
-        // Simula delay de análise visual
+        // Brief delay for visual focus stability
         setTimeout(() => {
           if (canvasRef.current && videoRef.current) {
             const ctx = canvasRef.current.getContext('2d');
@@ -28,9 +34,9 @@ export const AssistantControl: React.FC<AssistantControlProps> = ({ onCrystalliz
             canvasRef.current.height = videoRef.current.videoHeight;
             ctx?.drawImage(videoRef.current, 0, 0);
             const imageData = canvasRef.current.toDataURL('image/jpeg');
-            processWithAI("Analise este esboço ou componente e extraia a topologia helipoliedral.", imageData);
+            processWithAI("Analise este esboço ou componente e extraia a topologia helipoliedral para síntese 10D.", imageData);
             
-            // Cleanup stream
+            // Cleanup media stream resources
             stream.getTracks().forEach(track => track.stop());
           }
         }, 1000);
@@ -73,7 +79,7 @@ export const AssistantControl: React.FC<AssistantControlProps> = ({ onCrystalliz
         </div>
       )}
 
-      {/* Hidden helper elements */}
+      {/* Hidden helper elements for media processing */}
       <video ref={videoRef} className="hidden" />
       <canvas ref={canvasRef} className="hidden" />
     </div>

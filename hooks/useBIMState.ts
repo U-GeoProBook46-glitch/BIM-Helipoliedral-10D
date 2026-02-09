@@ -82,6 +82,7 @@ export const useBIMState = () => {
       recoveryScore: analyzeDisassembly(consolidatedPoints),
       timestamp: Date.now(),
       unit: subFolder === 'm' ? 'm' : 'mm',
+      revolutionAngle,
       dfd: generateDefaultDfD(`UNIT-${allFaces.length}F`)
     };
 
@@ -89,7 +90,7 @@ export const useBIMState = () => {
     addLog(`MATERIALIZED: ${newObj.id} TO STOCK`);
     setStagedFaces([]); setPoints([]); setIsClosed(false); setShowWorkflowModal(false);
     setStatus(`MATERIALIZED TO ${domain}/${subFolder}`);
-  }, [stagedFaces, points, layer, addLog]);
+  }, [stagedFaces, points, layer, addLog, revolutionAngle]);
 
   const deployToAssembly = useCallback((id: string) => {
     const blueprint = stagedObjects.find(o => o.id === id);
@@ -125,7 +126,13 @@ export const useBIMState = () => {
       setPrecisionLines, 
       setSelectedInstanceId, 
       setShowWorkflowModal, setShowDomainModal, setCurrentDomain,
-      addObject: (obj: StagedObject) => { setStagedObjects(prev => [obj, ...prev]); addLog(`AI_SYNTH_SYNC: ${obj.id}`); },
+      addObject: (obj: StagedObject) => { 
+        setStagedObjects(prev => [obj, ...prev]); 
+        if (obj.revolutionAngle !== undefined) {
+          setRevolutionAngle(obj.revolutionAngle);
+        }
+        addLog(`AI_SOVEREIGN_SYNC: ${obj.id}`); 
+      },
       setRevolutionAngle,
       setNavTarget: (p: THREE.Vector3) => { setNavTarget(p.clone()); addLog(`NAV_FOCUS: [${p.x.toFixed(1)}, ${p.z.toFixed(1)}]`); },
       deployToAssembly,

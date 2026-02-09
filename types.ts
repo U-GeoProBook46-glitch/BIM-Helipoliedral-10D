@@ -19,6 +19,12 @@ export enum Manifestation {
 export type ConnectionType = 'MECHANICAL_BOLT' | 'GRAVITY_FIT' | 'CHEMICAL_GLUE' | 'WELDED';
 export type LifecyclePhase = 'ASSEMBLY' | 'OPERATION' | 'END_OF_LIFE';
 
+export interface CoordinatePolar {
+  theta: number;
+  phi: number;
+  radius: number;
+}
+
 export interface DisassemblyData {
   connectionType: ConnectionType;
   accessibilityLevel: number; // 0.0 to 1.0
@@ -29,11 +35,6 @@ export interface DisassemblyData {
 }
 
 export type ISODomain = 'BIM' | 'AUTO' | 'CHIP';
-
-export interface CoordinatePolar {
-  theta: number;
-  phi: number;
-}
 
 export interface StagedObject {
   id: string;
@@ -46,11 +47,12 @@ export interface StagedObject {
   recoveryScore: number;
   timestamp: number;
   unit: string;
+  revolutionAngle?: number;
   dfd?: DisassemblyData;
 }
 
 export interface AssemblyInstance {
-  id: string; // Unique for instance
+  id: string;
   blueprintId: string;
   position: Vector3;
   rotation: number;
@@ -61,22 +63,11 @@ export interface AssemblyInstance {
   dfd: DisassemblyData;
 }
 
-export interface BIMState {
-  mode: AppMode;
-  layer: number;
-  points: Vector3[];
-  stagedFaces: Vector3[][];
-  isClosed: boolean;
-  precisionLines: boolean;
-  stagedObjects: StagedObject[];
-  instances: AssemblyInstance[];
-  selectedInstanceId: string | null;
-  status: string;
-  showWorkflowModal: boolean;
-  showDomainModal: boolean;
-  currentDomain: ISODomain | null;
-  currentManifestation: Manifestation;
-  currentRenderMode: RenderMode;
-  revolutionAngle: number;
-  navTarget: Vector3;
+export interface AIMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  type: 'text' | 'json' | 'geometry_proposal';
+  proposalData?: Partial<StagedObject>;
+  timestamp: number;
 }
