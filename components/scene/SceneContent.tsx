@@ -43,7 +43,6 @@ export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onCl
       <directionalLight position={[10, 20, 10]} intensity={1.5} color="#ffb000" />
       <pointLight position={state.navTarget} intensity={0.5} color="#00ff41" distance={20} />
       
-      {/* Superfície de Interação Centralizada */}
       <InteractionSurface 
         radius={state.activeRadius} 
         onPoint={onClick} 
@@ -53,13 +52,29 @@ export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onCl
 
       <PrecisionLines radius={state.activeRadius} visible={state.precisionLines} />
 
-      {state.points.length >= 2 && (
+      {/* Preview Elástico de Revolução (Active Drawing) */}
+      {state.points.length >= 2 && state.mode === AppMode.Lathe && (
         <LatheSolidRenderer 
             points={state.points} 
             angle={state.revolutionAngle} 
             color="#ffb000" 
+            isGhost={true}
         />
       )}
+
+      {/* Renderização de Objetos no Stock que são Volumes de Revolução */}
+      {state.stagedObjects.map(obj => {
+        if (!obj.isLathe || obj.points.length < 2) return null;
+        const v3Points = obj.points.map(p => new THREE.Vector3(p[0], p[1], p[2]));
+        return (
+          <LatheSolidRenderer 
+            key={`lathe-${obj.id}`}
+            points={v3Points}
+            angle={obj.revolutionAngle || 360}
+            color="#00ffff"
+          />
+        );
+      })}
 
       <GeometryStaging 
         points={state.points} 

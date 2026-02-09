@@ -68,6 +68,13 @@ export const useBIMState = () => {
     }
   }, [points, isClosed, precisionLines, activeRadius, currentDomain, addLog]);
 
+  const toggleRevolution = useCallback((id: string, angle: number) => {
+    setStagedObjects(prev => prev.map(obj => 
+      obj.id === id ? { ...obj, isLathe: !obj.isLathe, revolutionAngle: angle } : obj
+    ));
+    addLog(`REVOLUTION_MODULATED: ${id} | ANGLE: ${angle}º`);
+  }, [addLog]);
+
   const saveToISOStock = useCallback((domain: ISODomain, subFolder: string) => {
     const allFaces = [...stagedFaces, points].filter(f => f.length > 2);
     if (allFaces.length === 0) return;
@@ -83,6 +90,7 @@ export const useBIMState = () => {
       timestamp: Date.now(),
       unit: subFolder === 'm' ? 'm' : 'mm',
       revolutionAngle,
+      isLathe: mode === AppMode.Lathe, // Se estiver no modo torno, salva como lathe por padrão
       dfd: generateDefaultDfD(`UNIT-${allFaces.length}F`)
     };
 
@@ -90,7 +98,7 @@ export const useBIMState = () => {
     addLog(`MATERIALIZED: ${newObj.id} TO STOCK`);
     setStagedFaces([]); setPoints([]); setIsClosed(false); setShowWorkflowModal(false);
     setStatus(`MATERIALIZED TO ${domain}/${subFolder}`);
-  }, [stagedFaces, points, layer, addLog, revolutionAngle]);
+  }, [stagedFaces, points, layer, addLog, revolutionAngle, mode]);
 
   const deployToAssembly = useCallback((id: string) => {
     const blueprint = stagedObjects.find(o => o.id === id);
@@ -120,7 +128,7 @@ export const useBIMState = () => {
     },
     uiState: { status, currentManifestation, currentRenderMode },
     handlers: { 
-      setMode, setLayer, addPoint, saveToISOStock, 
+      setMode, setLayer, addPoint, saveToISOStock, toggleRevolution,
       undo: () => { setPoints(p => p.slice(0, -1)); addLog("ACTION_UNDO: POINT_REMOVED"); },
       clear: () => { setPoints([]); setStagedFaces([]); setInstances([]); addLog("KERNEL_PURGE: WORKSPACE_CLEARED"); },
       setPrecisionLines, 

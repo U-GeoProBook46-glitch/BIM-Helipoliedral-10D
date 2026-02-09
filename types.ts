@@ -48,6 +48,7 @@ export interface StagedObject {
   timestamp: number;
   unit: string;
   revolutionAngle?: number;
+  isLathe?: boolean;
   dfd?: DisassemblyData;
 }
 

@@ -47,6 +47,9 @@ export const NeuroCoreService = {
       return [v.x, v.y, v.z] as [number, number, number];
     });
 
+    // Detecção de Volume vs Superfície baseada na manifestação
+    const isLathe = payload.manifestation === 'Volume' || !!payload.revolutionAngle;
+
     return {
       id: payload.id || `ISO-SYNTH-${uuidv4().slice(0, 8).toUpperCase()}`,
       name: payload.id?.split('-')[0] || "AI_SYNTH_OBJECT",
@@ -58,7 +61,8 @@ export const NeuroCoreService = {
       recoveryScore: 0.98,
       timestamp: Date.now(),
       unit: 'm',
-      revolutionAngle: payload.revolutionAngle ?? 360
+      revolutionAngle: payload.revolutionAngle ?? 360,
+      isLathe: isLathe
     };
   }
 };
