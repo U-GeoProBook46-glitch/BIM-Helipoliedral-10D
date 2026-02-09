@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { OrbitControls, Grid, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -35,13 +36,17 @@ interface SceneContentProps {
   onDoubleClick?: () => void;
 }
 
+/**
+ * SceneContent: O Core de Renderização do BIM-Helipoliedral 10D.
+ * Integra a ferramenta 'Revolution' com preview elástico em tempo real.
+ */
 export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onClick, onNav }) => {
   return (
     <>
       <color attach="background" args={["#030200"]} />
-      <ambientLight intensity={0.15} />
-      <directionalLight position={[10, 20, 10]} intensity={1.5} color="#ffb000" />
-      <pointLight position={state.navTarget} intensity={0.5} color="#00ff41" distance={20} />
+      <ambientLight intensity={0.1} />
+      <directionalLight position={[10, 20, 10]} intensity={2.0} color="#ffb000" />
+      <pointLight position={state.navTarget} intensity={0.8} color="#00ff41" distance={30} />
       
       <InteractionSurface 
         radius={state.activeRadius} 
@@ -52,7 +57,7 @@ export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onCl
 
       <PrecisionLines radius={state.activeRadius} visible={state.precisionLines} />
 
-      {/* Preview Elástico de Revolução (Active Drawing) */}
+      {/* Preview Elástico de Revolução: 'Ghost Volume' Manual */}
       {state.points.length >= 2 && state.mode === AppMode.Lathe && (
         <LatheSolidRenderer 
             points={state.points} 
@@ -62,20 +67,25 @@ export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onCl
         />
       )}
 
-      {/* Renderização de Objetos no Stock que são Volumes de Revolução */}
+      {/* Renderização de Objetos no Stock (ISO Repository) */}
       {state.stagedObjects.map(obj => {
         if (!obj.isLathe || obj.points.length < 2) return null;
+        
         const v3Points = obj.points.map(p => new THREE.Vector3(p[0], p[1], p[2]));
+        // Objetos sintetizados via AI (ghostMode) aparecem em âmbar pulsante.
+        // Objetos cristalizados aparecem em ciano sólido.
         return (
           <LatheSolidRenderer 
             key={`lathe-${obj.id}`}
             points={v3Points}
             angle={obj.revolutionAngle || 360}
-            color="#00ffff"
+            color={obj.ghostMode ? "#ffb000" : "#00ffff"}
+            isGhost={obj.ghostMode}
           />
         );
       })}
 
+      {/* Geometria de Perfil Ativa */}
       <GeometryStaging 
         points={state.points} 
         isClosed={state.isClosed} 
@@ -83,6 +93,7 @@ export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onCl
         color="#ffb000"
       />
 
+      {/* Renderização de Faces Estáticas em Wireframe */}
       {state.stagedFaces.map((face, fi) => (
         <group key={`staged-${fi}`}>
           {face.map((p, i) => {
@@ -93,7 +104,7 @@ export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onCl
             return (
               <line key={`face-l-${fi}-${i}`}>
                 <bufferGeometry attach="geometry" onUpdate={s => s.setFromPoints(pts)} />
-                <lineBasicMaterial color="#00ff41" transparent opacity={0.3} />
+                <lineBasicMaterial color="#00ff41" transparent opacity={0.2} />
               </line>
             );
           })}
@@ -102,20 +113,20 @@ export const SceneContent: React.FC<SceneContentProps> = ({ state, uiState, onCl
 
       <InstanceManager data={state.instances} />
 
-      <Stars radius={300} count={2000} factor={4} saturation={1} fade speed={0.5} />
+      <Stars radius={400} count={3000} factor={5} saturation={1} fade speed={0.4} />
       <Grid 
         infiniteGrid 
-        fadeDistance={150} 
+        fadeDistance={200} 
         sectionColor="#221100" 
         cellColor="#050400" 
-        sectionThickness={1}
-        cellThickness={0.5}
+        sectionThickness={1.5}
+        cellThickness={0.8}
       />
 
       <OrbitControls 
         makeDefault 
-        minDistance={0.1} 
-        maxDistance={800} 
+        minDistance={1} 
+        maxDistance={1000} 
         target={state.navTarget}
         enableDamping={true}
         dampingFactor={0.05}

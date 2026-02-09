@@ -1,3 +1,4 @@
+
 import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
@@ -12,8 +13,9 @@ interface LatheSolidProps {
 
 /**
  * BIM-Helipoliedral 10D: Lathe Solid Renderer
- * Converte perfis polares/cartesianos em volumes sólidos de revolução.
- * Utiliza o shader "Mock Theta" para feedback técnico harmônico.
+ * Motor de revolução 3D baseado na Assinatura de Ramanujan.
+ * Suporta 'ghostMode' para objetos sintetizados via AI (Vibe Coding).
+ * Compliance ISO 9241: Feedback visual de estado de sistema.
  */
 export const LatheSolidRenderer: React.FC<LatheSolidProps> = ({ 
   points, 
@@ -25,38 +27,35 @@ export const LatheSolidRenderer: React.FC<LatheSolidProps> = ({
   const matRef = useRef<THREE.MeshStandardMaterial>(null);
   useDisposable(meshRef);
 
-  // Geração de Geometria de Revolução (Lathe)
   const geometry = useMemo(() => {
     if (points.length < 2) return null;
-    
-    // Projeção do Perfil no Plano 2D (Radial-Y)
     const points2d = points.map(p => {
-        // O raio (X no plano Lathe) é a distância horizontal ao centro
-        const radius = Math.sqrt(p.x * p.x + p.z * p.z);
-        return new THREE.Vector2(radius, p.y);
+        // ISO 80000-2: Projeção de raio radial no plano Y
+        const radialDist = Math.sqrt(p.x * p.x + p.z * p.z);
+        return new THREE.Vector2(radialDist, p.y);
     });
-
-    const segments = 48; // Ramanujan Multiplier (2 * 24)
+    const segments = isGhost ? 32 : 64; 
     const phiLength = (angle * Math.PI) / 180;
-    
     try {
         const geo = new THREE.LatheGeometry(points2d, segments, 0, phiLength);
         geo.computeVertexNormals();
         return geo;
     } catch (e) {
-        console.error("Lathe Construction Error:", e);
+        console.error("LATHE_STABILITY_FAILURE:", e);
         return null;
     }
-  }, [points, angle]);
+  }, [points, angle, isGhost]);
 
-  // Animação do Material "Mock Theta" (Pulsação Harmônica)
   useFrame((state) => {
     if (matRef.current) {
       const time = state.clock.getElapsedTime();
-      const pulse = 0.5 + 0.5 * Math.sin(time * 3);
-      matRef.current.emissiveIntensity = isGhost ? 0.05 + pulse * 0.1 : 0.1 + pulse * 0.2;
+      // Pulsação Áurea (1.618) para feedback harmônico
+      const pulse = 0.5 + 0.5 * Math.sin(time * 1.618);
+      
+      matRef.current.emissiveIntensity = isGhost ? 0.05 + pulse * 0.15 : 0.1 + pulse * 0.4;
       
       if (isGhost) {
+        // Opacidade elástica para objetos sintetizados (Vibe Coding)
         matRef.current.opacity = 0.2 + pulse * 0.1;
       }
     }
@@ -71,7 +70,7 @@ export const LatheSolidRenderer: React.FC<LatheSolidProps> = ({
         color={color} 
         side={THREE.DoubleSide} 
         transparent 
-        opacity={isGhost ? 0.3 : 0.6}
+        opacity={isGhost ? 0.3 : 0.8}
         metalness={0.9}
         roughness={0.1}
         emissive={color}

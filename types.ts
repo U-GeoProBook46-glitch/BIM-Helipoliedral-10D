@@ -39,7 +39,8 @@ export type ISODomain = 'BIM' | 'AUTO' | 'CHIP';
 export interface StagedObject {
   id: string;
   name: string;
-  points: [number, number, number][];
+  points: [number, number, number][]; // Cartesian for Three.js
+  polarInstructions: CoordinatePolar[]; // Required for Ramanujan Snapping
   layer: number;
   domain: ISODomain;
   subFolder: string;
@@ -49,6 +50,7 @@ export interface StagedObject {
   unit: string;
   revolutionAngle?: number;
   isLathe?: boolean;
+  ghostMode?: boolean; // Flag for synthesized objects (vibe coding)
   dfd?: DisassemblyData;
 }
 

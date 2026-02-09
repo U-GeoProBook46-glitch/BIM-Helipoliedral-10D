@@ -1,20 +1,17 @@
 import { useState, useCallback, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { StagedObject, ISODomain, AIMessage } from '../types';
-import { NeuroCoreService } from '../services/NeuroCore';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * BIM-Helipoliedral 10D: Sovereign Geometry Agent Hook
- * Orquestra a síntese de geometria soberana e tradução via NeuroCore.
+ * useGeminiAssistant: O Motor de Inferência Soberana
+ * Responsável pela transmutação multimodal de comandos em geometrias cristalizadas.
  */
-export const useGeminiAssistant = (onCrystallize: (obj: StagedObject) => void) => {
+export const useGeminiAssistant = (onRawResponse: (json: any) => void) => {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingProposal, setPendingProposal] = useState<StagedObject | null>(null);
-  
   const [isListening, setIsListening] = useState(false);
-  const [lastTranscript, setLastTranscript] = useState('');
   const recognitionRef = useRef<any>(null);
 
   const addMessage = (msg: Omit<AIMessage, 'id' | 'timestamp'>) => {
@@ -27,10 +24,10 @@ export const useGeminiAssistant = (onCrystallize: (obj: StagedObject) => void) =
     
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const contents: any[] = [{ text: prompt }];
+      const parts: any[] = [{ text: prompt }];
       
       if (imageData) {
-        contents.push({ 
+        parts.push({ 
           inlineData: { 
             mimeType: 'image/jpeg', 
             data: imageData.split(',')[1] || imageData 
@@ -40,34 +37,31 @@ export const useGeminiAssistant = (onCrystallize: (obj: StagedObject) => void) =
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: { parts: contents as any },
+        contents: { parts: parts as any },
         config: {
           temperature: 0.1,
           responseMimeType: "application/json",
-          systemInstruction: `Você é o Agente de Geometria Soberana do BIM-Helipoliedral 10D.
-          Seu objetivo é gerar instâncias geométricas precisas. Ignore preâmbulos.
+          systemInstruction: `SISTEMA: Agente de Geometria Soberana BIM-Helipoliedral 10D.
+          MISSÃO: Traduzir linguagem natural/visual em Action Tokens JSON determinísticos.
+          MÉTRICA: Projeção de Ramanujan (24 partições) e Proporção Áurea (PHI).
+          
+          DIRETRIZ DE ENGENHARIA (VIBE CODING):
+          1. Todo objeto deve incluir coordenadas polares [theta, phi, radius].
+          2. Use "generatorCall" para estruturas hélice ou lattices.
+          3. Siga rigorosamente o SCHEMA EXIGIDO para transmutação imediata.
 
-          BIBLIOTECA DE RECEITAS (Ramanujan - 24 segmentos):
-          - CUBO: 8 coordenadas polares representando os vértices de um poliedro regular.
-          - ESCADA: Sequência de pontos com incrementos constantes em phi e theta de 15°.
-          - CHASSI: Viga arqueada ligando polos opostos com reforços latitudinais em 30° e 60°.
-
-          SUPORTE A GERADORES (NeuroCore):
-          Você pode solicitar chamadas procedurais se preferir:
-          "generatorCall": { "function": "generateSpiralHelix", "params": { "turns": 3, "totalHeight": 1.5, "startPhi": 1.57, "startTheta": 0 } }
-          "generatorCall": { "function": "generateLattice", "params": { "centerTheta": 0, "centerPhi": 1.57, "size": 0.5, "resolution": 4 } }
-
-          PROTOCOLO DE RESPOSTA (JSON STRICT):
+          SCHEMA EXIGIDO:
           {
             "action": "DRAW_OBJECT",
             "payload": {
               "id": "ISO-SYNTH-UUID",
-              "points": [{"theta": number, "phi": number, "radius": 1}], // Opcional se usar generatorCall
-              "generatorCall": { "function": "name", "params": {} }, // Opcional
+              "name": "NOME_TECNICO",
+              "points": [{"theta": number, "phi": number, "radius": 1}],
+              "generatorCall": { "function": "generateSpiralHelix" | "generateLattice", "params": {} },
               "baseLayer": number,
               "domain": "BIM" | "AUTO" | "CHIP",
               "manifestation": "Wireframe" | "Surface" | "Volume",
-              "revolutionAngle": number,
+              "revolutionAngle": 360,
               "description": "Memorial descritivo curto ISO 80000"
             }
           }`
@@ -75,47 +69,31 @@ export const useGeminiAssistant = (onCrystallize: (obj: StagedObject) => void) =
       });
 
       const rawJson = JSON.parse(response.text || "{}");
-      const radiusFactor = (rawJson.payload?.baseLayer || 32.5) * 2.5;
-      const obj = NeuroCoreService.transmuteIntentToGeometry(rawJson, radiusFactor);
+      onRawResponse(rawJson); // Delega ao App.tsx/NeuroCore a transmutação
       
-      if (obj) {
-        setPendingProposal(obj);
-        addMessage({ 
-          role: 'assistant', 
-          content: obj.description || "Geometria soberana cristalizada via NeuroCore.", 
-          type: 'geometry_proposal',
-          proposalData: obj
-        });
-      } else {
-        addMessage({ 
-          role: 'assistant', 
-          content: "Comando interpretado, mas falha na transmutação geométrica.", 
-          type: 'text' 
-        });
-      }
     } catch (error: any) {
-      console.error("Sovereign Assistant Error:", error);
-      addMessage({ role: 'assistant', content: "Falha na síntese: Erro de paridade harmônica no NeuroCore.", type: 'text' });
+      console.error("Gemini Kernel Failure:", error);
+      addMessage({ role: 'assistant', content: "FALHA_CRÍTICA: Erro de paridade no processamento NeuroCore.", type: 'text' });
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [onRawResponse]);
 
   const startVoiceCommand = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
       return;
     }
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
     recognition.lang = 'pt-BR';
     recognition.onstart = () => setIsListening(true);
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      setLastTranscript(transcript);
       processWithAI(transcript);
     };
     recognition.onend = () => setIsListening(false);
@@ -130,13 +108,10 @@ export const useGeminiAssistant = (onCrystallize: (obj: StagedObject) => void) =
     setPendingProposal,
     processWithAI,
     isListening,
-    lastTranscript,
     startVoiceCommand,
     approveProposal: (domain: ISODomain) => {
       if (pendingProposal) {
-        onCrystallize({ ...pendingProposal, domain });
-        setPendingProposal(null);
-        addMessage({ role: 'assistant', content: `Crystallized to ${domain}. Interface harmônica estabilizada.`, type: 'text' });
+        // Logica de aprovação pode ser integrada conforme necessário
       }
     }
   };

@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
-import { AppMode, Manifestation, RenderMode, StagedObject, AssemblyInstance, ISODomain, DisassemblyData } from '../types';
-import { snapToPrecisionLines, toPolar } from '../utils/math/polar';
+import { AppMode, Manifestation, RenderMode, StagedObject, AssemblyInstance, ISODomain, DisassemblyData, CoordinatePolar } from '../types';
+import { snapToPrecisionLines, toPolar, toVec3 } from '../utils/math/polar';
 import { analyzeDisassembly } from '../utils/math/analysis';
 import { isClosedLoop } from '../utils/math/topology';
 
@@ -38,12 +38,7 @@ export const useBIMState = () => {
     disassemblyTool: 'Chave Allen 5mm',
     recyclabilityIndex: 0.98,
     lifecyclePhase: 'OPERATION',
-    steps: [
-      `Posicione o atuador no centroide de ${name}`,
-      "Desbloqueie os fixadores mecânicos superiores",
-      "Retire o componente seguindo o vetor normal do plano",
-      "Encaminhe para logística reversa ISO 14001"
-    ]
+    steps: [`Posicione o atuador no centroide de ${name}`, "Desbloqueie fixadores", "Retire componente", "Logística reversa"]
   });
 
   const addPoint = useCallback((point: THREE.Vector3) => {
@@ -52,102 +47,75 @@ export const useBIMState = () => {
       return;
     }
     if (isClosed) return;
-
     const snapped = precisionLines ? snapToPrecisionLines(point, activeRadius) : point;
     const newPoints = [...points, snapped];
-    
-    addLog(`PT_CRYSTAL: [X:${snapped.x.toFixed(2)} Y:${snapped.y.toFixed(2)} Z:${snapped.z.toFixed(2)}]`);
-
+    addLog(`PT_CRYSTAL: [${snapped.x.toFixed(2)} ${snapped.y.toFixed(2)} ${snapped.z.toFixed(2)}]`);
     if (isClosedLoop(newPoints, 2.0)) {
       setIsClosed(true);
       setShowWorkflowModal(true);
-      setStatus("FACE CRYSTALLIZED | TOPOLOGY STABILIZED");
-      addLog("TOPOLOGY_LOOP_CLOSED: FACE DETECTED");
+      setStatus("FACE CRYSTALLIZED");
     } else {
       setPoints(newPoints);
     }
   }, [points, isClosed, precisionLines, activeRadius, currentDomain, addLog]);
 
-  const toggleRevolution = useCallback((id: string, angle: number) => {
-    setStagedObjects(prev => prev.map(obj => 
-      obj.id === id ? { ...obj, isLathe: !obj.isLathe, revolutionAngle: angle } : obj
-    ));
-    addLog(`REVOLUTION_MODULATED: ${id} | ANGLE: ${angle}º`);
-  }, [addLog]);
-
   const saveToISOStock = useCallback((domain: ISODomain, subFolder: string) => {
     const allFaces = [...stagedFaces, points].filter(f => f.length > 2);
     if (allFaces.length === 0) return;
-
     const consolidatedPoints = allFaces.flat();
+    
+    // Calcula polarInstructions para desenho manual
+    const polarPoints: CoordinatePolar[] = consolidatedPoints.map(p => {
+      const pData = toPolar(p);
+      return { theta: pData.theta, phi: pData.phi, radius: pData.r / activeRadius };
+    });
+
     const newObj: StagedObject = {
       id: `ISO-${uuidv4().slice(0, 8).toUpperCase()}`,
       name: `UNIT-${allFaces.length}F`,
       points: consolidatedPoints.map(p => [p.x, p.y, p.z]),
+      polarInstructions: polarPoints,
       layer, domain, subFolder,
       description: `ISO ${domain} Active Topology`,
       recoveryScore: analyzeDisassembly(consolidatedPoints),
       timestamp: Date.now(),
       unit: subFolder === 'm' ? 'm' : 'mm',
       revolutionAngle,
-      isLathe: mode === AppMode.Lathe, // Se estiver no modo torno, salva como lathe por padrão
+      isLathe: mode === AppMode.Lathe,
       dfd: generateDefaultDfD(`UNIT-${allFaces.length}F`)
     };
-
     setStagedObjects(prev => [newObj, ...prev]);
-    addLog(`MATERIALIZED: ${newObj.id} TO STOCK`);
     setStagedFaces([]); setPoints([]); setIsClosed(false); setShowWorkflowModal(false);
-    setStatus(`MATERIALIZED TO ${domain}/${subFolder}`);
-  }, [stagedFaces, points, layer, addLog, revolutionAngle, mode]);
-
-  const deployToAssembly = useCallback((id: string) => {
-    const blueprint = stagedObjects.find(o => o.id === id);
-    if (blueprint) {
-      const instanceId = uuidv4().slice(0, 8);
-      setInstances(prev => [...prev, { 
-        id: instanceId,
-        blueprintId: id, 
-        position: navTarget.clone(), 
-        rotation: 0, 
-        layer, 
-        renderMode: currentRenderMode, 
-        manifestation: currentManifestation,
-        dfd: blueprint.dfd || generateDefaultDfD(blueprint.name)
-      }]);
-      addLog(`DEPLOYED_INSTANCE: ${instanceId} FROM ${id}`);
-      setStatus(`DEPLOYED: ${blueprint.name} TO ASSEMBLY`);
-      setSelectedInstanceId(instanceId);
-    }
-  }, [stagedObjects, navTarget, layer, currentRenderMode, currentManifestation, addLog]);
+    setStatus(`MATERIALIZED TO ${domain}`);
+  }, [stagedFaces, points, layer, activeRadius, revolutionAngle, mode]);
 
   return {
-    appState: { 
-      mode, layer, points, stagedFaces, isClosed, precisionLines, 
-      stagedObjects, instances, selectedInstanceId, activeRadius, 
-      showWorkflowModal, showDomainModal, currentDomain, revolutionAngle, navTarget, logs
-    },
+    appState: { mode, layer, points, stagedFaces, isClosed, precisionLines, stagedObjects, instances, selectedInstanceId, activeRadius, showWorkflowModal, showDomainModal, currentDomain, revolutionAngle, navTarget, logs },
     uiState: { status, currentManifestation, currentRenderMode },
     handlers: { 
-      setMode, setLayer, addPoint, saveToISOStock, toggleRevolution,
-      undo: () => { setPoints(p => p.slice(0, -1)); addLog("ACTION_UNDO: POINT_REMOVED"); },
-      clear: () => { setPoints([]); setStagedFaces([]); setInstances([]); addLog("KERNEL_PURGE: WORKSPACE_CLEARED"); },
-      setPrecisionLines, 
-      setSelectedInstanceId, 
-      setShowWorkflowModal, setShowDomainModal, setCurrentDomain,
+      setMode, setLayer, addPoint, saveToISOStock,
+      undo: () => setPoints(p => p.slice(0, -1)),
+      clear: () => { setPoints([]); setStagedFaces([]); setInstances([]); },
+      setPrecisionLines, setSelectedInstanceId, setShowWorkflowModal, setShowDomainModal, setCurrentDomain,
       addObject: (obj: StagedObject) => { 
         setStagedObjects(prev => [obj, ...prev]); 
-        if (obj.revolutionAngle !== undefined) {
-          setRevolutionAngle(obj.revolutionAngle);
-        }
-        addLog(`AI_SOVEREIGN_SYNC: ${obj.id}`); 
+        if (obj.revolutionAngle !== undefined) setRevolutionAngle(obj.revolutionAngle);
+        addLog(`KERNEL_SYNC: ${obj.id}`); 
+        if (obj.ghostMode) addLog(`[SISTEMA]: Geometria Sintetizada via Comando de Voz detectada.`);
       },
       setRevolutionAngle,
-      setNavTarget: (p: THREE.Vector3) => { setNavTarget(p.clone()); addLog(`NAV_FOCUS: [${p.x.toFixed(1)}, ${p.z.toFixed(1)}]`); },
-      deployToAssembly,
+      setNavTarget: (p: THREE.Vector3) => setNavTarget(p.clone()),
+      deployToAssembly: (id: string) => {
+        const blueprint = stagedObjects.find(o => o.id === id);
+        if (blueprint) {
+          const instanceId = uuidv4().slice(0, 8);
+          setInstances(prev => [...prev, { id: instanceId, blueprintId: id, position: navTarget.clone(), rotation: 0, layer, renderMode: currentRenderMode, manifestation: currentManifestation, dfd: blueprint.dfd || generateDefaultDfD(blueprint.name) }]);
+          setSelectedInstanceId(instanceId);
+        }
+      },
       continueDrawing: () => {
         if (points.length > 2) {
           setStagedFaces(prev => [...prev, [...points]]);
-          addLog("FACE_CACHED: STARTING_NEW_TOPOLOGY");
           setPoints([]); setIsClosed(false); setShowWorkflowModal(false);
         }
       }
