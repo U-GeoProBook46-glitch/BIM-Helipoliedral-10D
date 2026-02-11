@@ -17,5 +17,5 @@ High-performance spatial engineering engine with 10D topological validation, orc
 - **Frontend:** Leptos (Rust) / Three-d (WebGL Rendering)
 - **Database:** SurrealDB (LocalHost First)
 
-🔒 **License**
-All Rights Reserved. Private source code for contest evaluation.
+🔒 **License & IP**
+**All Rights Reserved.** This software is currently under registration at **INPI** (Brazilian Industrial Property Institute). Private source code provided for contest evaluation and authorized audits only.
