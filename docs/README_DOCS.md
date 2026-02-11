@@ -31,3 +31,10 @@ The heart of the engine is a unified Rust/WASM implementation:
 
 ## 5. Ethical Topological Filters
 The core includes an "Agnostic Ethical Guard". Every 10D structure has a unique equation signature. The Rust core performs pattern-matching on these signatures to ensure the geometry does not conform to unauthorized or prohibited structural patterns.
+
+## 🔐 Kernel Integrity Certification (SHA-512)
+- **File:** `BIM-Helipoliedral-Kernel-V1.zip`
+- **Algorithm:** SHA-512
+- **Hash:** 881A50BE9318508271AF1E3A1292D300E452BE70B44C931FDF8BE56A369EE7A423FDC42F86392E936E5DA0C3155A277F189B09F5FEE44EB07C4E67E440CD34E2
+- **Start Evidence:** 2026 (Embedded in Git History)
+- **Certification Date:** Feb 11, 2026
