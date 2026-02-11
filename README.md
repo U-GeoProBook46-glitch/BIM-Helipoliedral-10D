@@ -77,3 +77,25 @@ The central innovation lies in the Gemini 3 Pro API acting as a "NeuroCore". Ins
   **Todos os Direitos Reservados.** Este software está atualmente em processo de registro no **INPI** (Instituto Nacional da Propriedade Industrial). Código-fonte privado fornecido apenas para avaliação de concurso e auditorias autorizadas.
 
 </details>
+
+<details>
+  <summary><b>📄 View Technical System Architecture (README_DOCS)</b></summary>
+
+  # BIM-Helipoliedral 10D - System Architecture
+
+  This document describes the technical architecture of the BIM-Helipoliedral 10D engine, focusing on the integration between low-level memory-safe logic and AI-driven orchestration.
+
+  ---
+
+  ### 🛠️ Key Technical Sections
+  For a deep dive into our core logic, please refer to the full document:
+  👉 **[Full System Architecture Document](./docs/README_DOCS.md)**
+
+  ### 🔐 Kernel Integrity Certification (SHA-512)
+  To ensure the integrity of the private Theta Core, the following digital fingerprint is registered:
+  - **File:** `BIM-Helipoliedral-Kernel-V1.zip`
+  - **Algorithm:** SHA-512
+  - **Start Evidence:** 2026 (Embedded in Git History)
+  - **Certification Date:** Feb 11, 2026
+
+</details>
